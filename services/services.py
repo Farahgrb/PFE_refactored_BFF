@@ -47,7 +47,7 @@ async def transcribe_audio(file, asr_microservice_url, classification_microservi
                 response.raise_for_status()
                 transcription = await response.json()
                 reshaped_text = arabic_reshaper.reshape(transcription.get("Transcription"))
-                display_text = get_display(reshaped_text)
+                
 
             # Classify the transcribed text using the classification microservice
             async with session.post(
@@ -55,9 +55,15 @@ async def transcribe_audio(file, asr_microservice_url, classification_microservi
                 json={"text": reshaped_text},
             ) as response1:
                 response1.raise_for_status()
-                label = await response1.json()
+                
+                print(response1)
+                
 
-        return {"Transcription": transcription["Transcription"], "label": label["label"]}
+                data = await response1.json()  # This will parse the response data as JSON
+                print(data)
+                
+        return data
+     
     except Exception as e:
 
         return {"error": str(e)}
@@ -85,6 +91,7 @@ async def text_classify(text_input,classification_microservice_url):
         response.raise_for_status()
       
         result = response.text
+        print(result)
 
         api_response_dict = json.loads(result)
         
