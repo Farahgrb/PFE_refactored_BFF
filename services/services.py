@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from bidi.algorithm import get_display
 from pydantic.generics import GenericModel
 from fastapi import  HTTPException
+from aiohttp import ClientSession, ClientTimeout
 
 
 
@@ -38,7 +39,8 @@ async def file_to_data(payload_obj) -> FormData:
 
 async def transcribe_audio(file, asr_microservice_url, classification_microservice_url):
     try:
-        async with ClientSession() as session:
+        timeout = ClientTimeout(total=600)  
+        async with ClientSession(timeout=timeout) as session:
             # Transcribe the audio file using ASR microservice
             async with session.post(
                 url=f"{asr_microservice_url}/transcription",
@@ -47,7 +49,6 @@ async def transcribe_audio(file, asr_microservice_url, classification_microservi
                 response.raise_for_status()
                 transcription = await response.json()
                 reshaped_text = arabic_reshaper.reshape(transcription.get("Transcription"))
-                
 
             # Classify the transcribed text using the classification microservice
             async with session.post(
@@ -55,17 +56,11 @@ async def transcribe_audio(file, asr_microservice_url, classification_microservi
                 json={"text": reshaped_text},
             ) as response1:
                 response1.raise_for_status()
-                
-                print(response1)
-                
-
                 data = await response1.json()  # This will parse the response data as JSON
-                print(data)
-                
-        return data
-     
-    except Exception as e:
 
+        return data
+
+    except Exception as e:
         return {"error": str(e)}
     
 async def upload_file(file):
